@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>B-Zone · Ammo Calculator</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@400;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0b0e14;--bg2:#111620;--bg3:#181e2c;--border:#1e2a3d;
+  --gold:#e8a020;--blue:#3d9fff;--green:#2dce6e;--red:#ff3355;--purple:#b56bff;
+  --text:#c5d3e8;--dim:#4a607a;--white:#f0f4ff;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;min-height:100vh;}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background-image:linear-gradient(rgba(61,159,255,.025) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(61,159,255,.025) 1px,transparent 1px);
+  background-size:48px 48px;}
+
+header{position:relative;z-index:10;padding:15px 28px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:16px;
+  background:linear-gradient(180deg,rgba(232,160,32,.06) 0%,transparent 100%);}
+header::after{content:'';position:absolute;bottom:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,var(--gold),transparent);}
+.logo{font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:5px;color:var(--gold);
+  text-shadow:0 0 40px rgba(232,160,32,.5);}
+.logo em{color:var(--dim);font-style:normal;font-size:14px;letter-spacing:2px;}
+.hsub{font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:2px;color:var(--dim);margin-left:auto;}
+
+.mode-tabs{display:flex;background:var(--bg2);border-bottom:1px solid var(--border);position:relative;z-index:5;}
+.mtab{background:transparent;border:none;border-bottom:2px solid transparent;
+  padding:11px 26px;cursor:pointer;font-family:'Barlow Condensed',sans-serif;
+  font-size:15px;font-weight:700;letter-spacing:1px;color:var(--dim);transition:all .2s;}
+.mtab:hover{color:var(--text);}
+.mtab.active{color:var(--gold);border-bottom-color:var(--gold);}
+.mtab.ammo.active{color:var(--purple);border-bottom-color:var(--purple);}
+
+.layout{display:grid;grid-template-columns:272px 1fr;height:calc(100vh - 66px);position:relative;z-index:1;}
+
+.sidebar{background:var(--bg2);border-right:1px solid var(--border);overflow-y:auto;padding:14px 0;}
+.sidebar::-webkit-scrollbar{width:3px;}
+.sidebar::-webkit-scrollbar-thumb{background:var(--border);}
+.search-wrap{padding:0 14px 14px;border-bottom:1px solid var(--border);}
+.sbox{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:5px;
+  color:var(--white);font-family:'Barlow',sans-serif;font-size:14px;padding:8px 13px;
+  outline:none;transition:border-color .2s;}
+.sbox:focus{border-color:var(--gold);}
+.sbox.asrch:focus{border-color:var(--purple);}
+.sbox::placeholder{color:var(--dim);}
+.cat-label{font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:3px;
+  color:var(--dim);text-transform:uppercase;padding:12px 14px 5px;}
+.item-btn{display:flex;align-items:center;gap:8px;width:100%;background:transparent;
+  border:none;border-left:3px solid transparent;padding:8px 14px;cursor:pointer;
+  color:var(--text);font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:600;
+  letter-spacing:.4px;text-align:left;transition:all .15s;}
+.item-btn:hover{background:var(--bg3);color:var(--white);}
+.item-btn.active{background:rgba(232,160,32,.07);border-left-color:var(--gold);color:var(--gold);}
+.item-btn.aactive{background:rgba(181,107,255,.07);border-left-color:var(--purple);color:var(--purple);}
+.wtag{margin-left:auto;font-family:'Share Tech Mono',monospace;font-size:9px;
+  padding:2px 6px;border-radius:2px;border:1px solid;white-space:nowrap;flex-shrink:0;}
+.tg-r{color:#ff8c42;border-color:rgba(255,140,66,.3);background:rgba(255,140,66,.08);}
+.tg-s{color:#2dce6e;border-color:rgba(45,206,110,.3);background:rgba(45,206,110,.08);}
+.tg-p{color:#3d9fff;border-color:rgba(61,159,255,.3);background:rgba(61,159,255,.08);}
+.tg-a{color:#b56bff;border-color:rgba(181,107,255,.3);background:rgba(181,107,255,.08);}
+
+.panel{overflow-y:auto;padding:28px 32px;}
+.panel::-webkit-scrollbar{width:3px;}
+.panel::-webkit-scrollbar-thumb{background:var(--border);}
+.empty{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:12px;color:var(--dim);text-align:center;}
+.empty-ico{font-size:50px;opacity:.2;}
+.empty h2{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:4px;color:var(--dim);}
+
+.dname{font-family:'Bebas Neue',sans-serif;font-size:36px;letter-spacing:4px;color:var(--white);
+  line-height:1;margin-bottom:8px;}
+.dmeta{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:22px;}
+.chip{display:flex;align-items:center;gap:6px;font-family:'Share Tech Mono',monospace;font-size:11px;
+  background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:5px 10px;color:var(--dim);}
+.chip b{color:var(--gold);font-weight:400;}
+.chip.pur b{color:var(--purple);}
+
+.qty-row{display:flex;align-items:center;gap:12px;background:var(--bg2);border:1px solid var(--border);
+  border-radius:7px;padding:12px 18px;margin-bottom:22px;flex-wrap:wrap;}
+.qty-lbl{font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--dim);}
+.qty-ctrl{display:flex;border:1px solid var(--border);border-radius:4px;overflow:hidden;}
+.qbtn{background:var(--bg3);border:none;color:var(--gold);width:32px;height:32px;
+  font-size:16px;cursor:pointer;transition:background .15s;}
+.qbtn:hover{background:rgba(232,160,32,.15);}
+.qbtn.pur{color:var(--purple);}
+.qbtn.pur:hover{background:rgba(181,107,255,.15);}
+.qinput{background:var(--bg);border:none;border-left:1px solid var(--border);
+  border-right:1px solid var(--border);color:var(--white);text-align:center;
+  font-family:'Bebas Neue',sans-serif;font-size:17px;width:54px;height:32px;outline:none;}
+.presets{display:flex;gap:5px;flex-wrap:wrap;}
+.pbtn{background:var(--bg3);border:1px solid var(--border);border-radius:3px;color:var(--dim);
+  font-family:'Share Tech Mono',monospace;font-size:10px;padding:4px 9px;cursor:pointer;transition:all .15s;}
+.pbtn:hover{border-color:var(--gold);color:var(--gold);}
+.pbtn.pur:hover{border-color:var(--purple);color:var(--purple);}
+
+.stitle{font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:3px;color:var(--blue);
+  text-transform:uppercase;margin-bottom:10px;display:flex;align-items:center;gap:8px;}
+.stitle::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,var(--border),transparent);}
+.stitle.gc{color:var(--green);}
+.stitle.go{color:var(--gold);}
+.stitle.gp{color:var(--purple);}
+
+.recipe-card{background:var(--bg2);border:1px solid var(--border);border-radius:9px;
+  overflow:hidden;margin-bottom:14px;animation:fadeUp .2s ease;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.recipe-cmd{background:var(--bg3);border-bottom:1px solid var(--border);padding:10px 18px;
+  font-family:'Share Tech Mono',monospace;font-size:13px;color:var(--gold);}
+.recipe-cmd.pur{color:var(--purple);}
+.recipe-cmd em{color:var(--dim);font-style:normal;}
+.recipe-body{padding:16px 18px;}
+.row{display:flex;align-items:flex-start;padding:7px 0;border-bottom:1px solid rgba(30,42,61,.5);}
+.row:last-child{border-bottom:none;}
+.row-ico{width:26px;flex-shrink:0;font-size:14px;padding-top:2px;}
+.row-left{flex:1;}
+.row-name{font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700;
+  color:var(--white);letter-spacing:.3px;}
+.row-name.bp{color:var(--gold);}
+.row-sub{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--dim);
+  margin-top:2px;line-height:1.7;}
+.row-sub .hl{color:var(--text);}
+.row-sub .raw{color:var(--dim);font-size:9px;}
+.row-qty{font-family:'Bebas Neue',sans-serif;font-size:24px;color:var(--gold);
+  min-width:44px;text-align:right;line-height:1;}
+.row-qty.bl{color:var(--blue);}
+.row-qty.gn{color:var(--green);}
+.row-qty.pu{color:var(--purple);}
+.divider{border:none;border-top:1px dashed var(--border);margin:4px 0;}
+
+.totals{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px;}
+.tbox{background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:11px 12px;text-align:center;}
+.tbox.hi {border-color:rgba(232,160,32,.35);background:rgba(232,160,32,.06);}
+.tbox.hi2{border-color:rgba(61,159,255,.28);background:rgba(61,159,255,.05);}
+.tbox.hi3{border-color:rgba(181,107,255,.28);background:rgba(181,107,255,.05);}
+.tbox.hi4{border-color:rgba(45,206,110,.28);background:rgba(45,206,110,.05);}
+.tlbl{font-family:'Share Tech Mono',monospace;font-size:8px;letter-spacing:2px;color:var(--dim);margin-bottom:5px;}
+.tval{font-family:'Bebas Neue',sans-serif;font-size:21px;color:var(--gold);}
+.tbox.hi2 .tval{color:var(--blue);}
+.tbox.hi3 .tval{color:var(--purple);}
+.tbox.hi4 .tval{color:var(--green);}
+
+.raw-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:7px;margin-top:4px;}
+.raw-item{background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:9px 13px;}
+.ri-name{font-size:12px;font-weight:600;color:var(--white);margin-bottom:2px;}
+.ri-qty{font-family:'Bebas Neue',sans-serif;font-size:26px;color:var(--green);}
+.ri-note{font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--dim);margin-top:1px;}
+
+.formula-box{margin-top:18px;background:var(--bg2);border:1px solid var(--border);
+  border-radius:7px;padding:14px 18px;}
+.formula-box div{font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--dim);line-height:2.2;}
+
+.ammo-link{display:inline-flex;align-items:center;gap:6px;
+  background:rgba(181,107,255,.1);border:1px solid rgba(181,107,255,.3);
+  border-radius:4px;padding:5px 12px;font-family:'Share Tech Mono',monospace;
+  font-size:11px;color:var(--purple);cursor:pointer;transition:all .2s;margin-bottom:18px;
+  border-left:3px solid var(--purple);}
+.ammo-link:hover{background:rgba(181,107,255,.2);}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">B<em>-ZONE</em> CRAFT</div>
+  <div class="hsub">AMMO CALCULATOR</div>
+</header>
+
+<div class="layout">
+  <aside class="sidebar" id="sidebar"></aside>
+  <main  class="panel"   id="panel">
+    <div class="empty">
+      <div class="empty-ico">🔴</div>
+      <h2>Selecteaza un tip de gloante</h2>
+      <p style="font-size:13px">Alege din lista din stanga</p>
+    </div>
+  </main>
+</div>
+
+<script>
+// ═══════════════════ DATA ═══════════════════════════════════
+
+// AMMO
+// batch   = cate gloante produce 1 craft
+// casings = cate casings necesita (= batch)  — 2 cupru per batch de casings
+// plumb   = bucati plumb per craft  (1 plumb = 4 minereu plumb)
+// praf    = bucati praf  per craft  (1 praf  = 1 sulf + 1 carbune)
+const AMMO = [
+  {name:".38 Magnum",  batch:20, cupru:2, plumb:2, praf:3, ctype:".38 Magnum Casing"},
+  {name:"7.62mm",      batch:30, cupru:2, plumb:2, praf:2, ctype:"7.62mm Casing"},
+  {name:"7.65mm",      batch:20, cupru:2, plumb:2, praf:2, ctype:"7.65mm Casing"},
+  {name:"9mm ACP",     batch:30, cupru:2, plumb:1, praf:1, ctype:"9mm ACP Casing"},
+  {name:".44 Marlin",  batch:30, cupru:2, plumb:1, praf:2, ctype:".44 Marlin Casing"},
+  {name:"9mm PBM",     batch:30, cupru:1, plumb:1, praf:1, ctype:"9mm PBM Casing"},
+  {name:".45 ACP",     batch:30, cupru:1, plumb:1, praf:1, ctype:".45 ACP Casing"},
+];
+
+// ═══════════════════ STATE ══════════════════════════════════
+let mode = 'ammo';
+let activeItem = null;
+let activeBtn  = null;
+let qty = 1;
+
+// ═══════════════════ UTILS ══════════════════════════════════
+const fmtT = s => s<60 ? s+'s' : (s%60 ? Math.floor(s/60)+'m '+(s%60)+'s' : Math.floor(s/60)+'m');
+
+// ═══════════════════ MODE ═══════════════════════════════════
+function resetView(){
+  activeItem=null; activeBtn=null; qty=1;
+  buildSidebar();
+  document.getElementById('panel').innerHTML=`<div class="empty">
+    <div class="empty-ico">🔴</div>
+    <h2>Selecteaza un tip de gloante</h2>
+    <p style="font-size:13px">Alege din lista din stanga</p>
+  </div>`;
+}
+
+// ═══════════════════ SIDEBAR ════════════════════════════════
+function buildSidebar(filter=''){
+  const sb=document.getElementById('sidebar');
+  sb.innerHTML=`<div class="search-wrap">
+    <input class="sbox asrch" id="sboxEl"
+      placeholder="Cauta gloante..."
+      oninput="buildSidebar(this.value)" value="${filter}">
+  </div>`;
+  const fl=filter.toLowerCase();
+
+  sb.innerHTML+=`<div class="cat-label">Tipuri de gloante</div>`;
+  AMMO.filter(a=>!fl||a.name.toLowerCase().includes(fl)).forEach(a=>{
+    const btn=document.createElement('button');
+    btn.className='item-btn'+(activeItem===a?' active aactive':'');
+    btn.innerHTML=`<span>${a.name} <span style="color:var(--dim);font-size:12px">×${a.batch}</span></span>
+      <span class="wtag tg-a">AMMO</span>`;
+    btn.onclick=()=>pick(a,btn);
+    sb.appendChild(btn);
+    if(activeItem===a) activeBtn=btn;
+  });
+}
+
+function pick(item,btn){
+  if(activeBtn){ activeBtn.classList.remove('active','aactive'); }
+  btn.classList.add('active');
+  btn.classList.add('aactive');
+  activeBtn=btn; activeItem=item; qty=1;
+  renderPanel();
+}
+
+// ═══════════════════ QTY ════════════════════════════════════
+function changeQty(d){ qty=Math.max(1,qty+d); renderPanel(); sync(); }
+function setQty(n){ qty=n; renderPanel(); sync(); }
+function setQtyRaw(v){ let n=parseInt(v); if(isNaN(n)||n<1)n=1; qty=n; renderPanel(); }
+function sync(){ const i=document.getElementById('qinput'); if(i) i.value=qty; }
+
+function renderPanel(){ if(!activeItem) return; renderA(); }
+
+// ═══════════════════ AMMO ═══════════════════════════════════
+function renderA(){
+  const a=activeItem, q=qty;
+
+  // Per 1 craft (1 batch):
+  //   a.batch  gloante
+  //   a.batch  casings  (= cupru diferit in functie de tip)
+  //   a.plumb  plumb    (fiecare = 4 minereu plumb)
+  //   a.praf   praf     (fiecare = 1 sulf + 1 carbune)
+
+  const totalGloante = a.batch * q;
+  const totalCasings = a.batch * q;
+  const cupru        = a.cupru * q;
+  const plumb        = a.plumb * q;
+  const minereu      = plumb * 4;
+  const praf         = a.praf * q;
+  const sulf         = praf;
+  const carbune      = praf;
+  const totalRaw     = cupru + minereu + sulf + carbune;
+
+  document.getElementById('panel').innerHTML=`<div style="animation:fadeUp .2s ease">
+    <div class="dname">${a.name}</div>
+    <div class="dmeta">
+      <div class="chip pur">🔴&nbsp;<b>${a.batch} gloante</b>/craft</div>
+      <div class="chip">📦&nbsp;Casing: <b>${a.ctype} ×${a.batch}</b></div>
+    </div>
+
+    <div class="qty-row">
+      <div class="qty-lbl">NR. CRAFTURI</div>
+      <div class="qty-ctrl">
+        <button class="qbtn pur" onclick="changeQty(-1)">−</button>
+        <input class="qinput" type="number" min="1" max="999" value="${q}" id="qinput" onchange="setQtyRaw(this.value)">
+        <button class="qbtn pur" onclick="changeQty(1)">+</button>
+      </div>
+      <div class="presets">
+        ${[5,10,25,50,100].map(n=>`<button class="pbtn pur" onclick="setQty(${n})">×${n}</button>`).join('')}
+      </div>
+    </div>
+    <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--purple);margin:-12px 0 18px;">
+      → total <b style="color:var(--white)">${totalGloante}</b> gloante
+    </div>
+
+    <div class="stitle gp">Reteta craft</div>
+    <div class="recipe-card">
+      <div class="recipe-cmd pur"><em>/</em>craft ${a.name} ×${q} <em style="font-size:11px">(${totalGloante} gloante)</em></div>
+      <div class="recipe-body">
+
+        <!-- CASINGS -->
+        <div class="row">
+          <div class="row-ico">🔧</div>
+          <div class="row-left">
+            <div class="row-name">${a.ctype} ×${a.batch}</div>
+            <div class="row-sub">
+              <span class="hl">${q}</span> crafturi de casings
+              <span class="raw"> → ${cupru} cupru total (${a.cupru} cupru / craft)</span>
+            </div>
+          </div>
+          <div class="row-qty pu">${totalCasings}</div>
+        </div>
+
+        <hr class="divider">
+
+        <!-- PLUMB -->
+        <div class="row">
+          <div class="row-ico">⚫</div>
+          <div class="row-left">
+            <div class="row-name">Plumb</div>
+            <div class="row-sub">
+              <span class="hl">${a.plumb}</span> / craft
+              <span class="raw"> → total necesar: ${plumb} plumb (${minereu} minereu)</span>
+            </div>
+          </div>
+          <div class="row-qty">${plumb}</div>
+        </div>
+
+        <!-- PRAF -->
+        <div class="row">
+          <div class="row-ico">💨</div>
+          <div class="row-left">
+            <div class="row-name">Praf de pusca</div>
+            <div class="row-sub">
+              <span class="hl">${a.praf}</span> / craft
+              <span class="raw"> → 1 praf = 1 sulf + 1 carbune → ${sulf} sulf + ${carbune} carbune</span>
+            </div>
+          </div>
+          <div class="row-qty">${praf}</div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- TOTALS -->
+    <div class="totals">
+      <div class="tbox hi3"><div class="tlbl">Gloante totale</div><div class="tval">${totalGloante}</div></div>
+      <div class="tbox hi" ><div class="tlbl">Cupru necesar</div><div class="tval">${cupru}</div></div>
+      <div class="tbox hi2"><div class="tlbl">Plumb necesar</div><div class="tval">${plumb}</div></div>
+      <div class="tbox hi4"><div class="tlbl">RAW total</div><div class="tval">${totalRaw}</div></div>
+    </div>
+
+    <!-- RAW -->
+    <div class="stitle gc" style="margin-top:14px">RAW total (materiale finale)</div>
+    <div class="raw-grid">
+      <div class="raw-item">
+        <div class="ri-name">Cupru</div>
+        <div class="ri-qty">${cupru}</div>
+        <div class="ri-note">2/craft → casings</div>
+      </div>
+      <div class="raw-item">
+        <div class="ri-name">Plumb</div>
+        <div class="ri-qty">${plumb}</div>
+        <div class="ri-note">= ${minereu} minereu plumb</div>
+      </div>
+      <div class="raw-item">
+        <div class="ri-name">Sulf</div>
+        <div class="ri-qty">${sulf}</div>
+        <div class="ri-note">1 per praf × ${praf}</div>
+      </div>
+      <div class="raw-item">
+        <div class="ri-name">Carbune</div>
+        <div class="ri-qty">${carbune}</div>
+        <div class="ri-note">1 per praf × ${praf}</div>
+      </div>
+    </div>
+
+    <!-- FORMULA -->
+    <div class="formula-box">
+      <div class="stitle gp" style="margin-bottom:10px">Formula completa</div>
+      <div>
+        <span style="color:var(--purple)">${a.name} ×${a.batch}</span> =
+        <span style="color:var(--text)">${a.batch}× ${a.ctype}</span> +
+        <span style="color:var(--text)">${a.plumb}× Plumb</span> +
+        <span style="color:var(--text)">${a.praf}× Praf de pusca</span><br>
+        <span style="color:var(--gold)">${a.ctype} ×${a.batch}</span> = ${a.cupru}× Cupru<br>
+        <span style="color:var(--gold)">Plumb ×1</span> = 4× Minereu plumb<br>
+        <span style="color:var(--gold)">Praf de pusca ×1</span> = 1× Sulf + 1× Carbune
+      </div>
+    </div>
+  </div>`;
+}
+
+// ═══════════════════ INIT ═══════════════════════════════════
+buildSidebar();
+</script>
+</body>
+</html>
